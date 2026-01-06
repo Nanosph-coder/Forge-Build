@@ -1,4 +1,4 @@
-const CONTRACT_ADDRESS = "0xd9145CCE52D386f254917e481eB44e9943F39138";
+const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 const CONTRACT_ABI = [
     "function get() public view returns (uint)",
     "function set(uint x) public"
@@ -92,4 +92,5 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     });
+
 
