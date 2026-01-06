@@ -1,4 +1,4 @@
-const CONTRACT_ADDRESS = "0xd9145CCE52D386f254917e481eB44e9943F39138";
+const CONTRACT_ADDRESS = "0xd2a5bC10698FD955D1Fe6cb468a17809A08fd005";
 const CONTRACT_ABI = [
     "function get() public view returns (uint)",
     "function set(uint x) public"
@@ -21,24 +21,49 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 provider = new ethers.BrowserProvider(window.ethereum);
                 
+                const network = await provider.getNetwork();
+                if (network.chainId !== 11155111n) {
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: '0xaa36a7' }], 
+                        });
+                        provider = new ethers.BrowserProvider(window.ethereum);
+                    } catch (switchError) {
+                        if (switchError.code === 4902) {
+                            alert("Please add the Sepolia Testnet to your MetaMask!");
+                        }
+                        throw new Error("Wrong network connected");
+                    }
+                }
+
                 await provider.send("eth_requestAccounts", []);
                 
                 signer = await provider.getSigner();
+                
+                const code = await provider.getCode(CONTRACT_ADDRESS);
+                if (code === "0x") {
+                    statusMsg.textContent = 'Error: No contract found at this address on Sepolia!';
+                    statusMsg.style.color = 'red';
+                    console.error("The address " + CONTRACT_ADDRESS + " has no code on this network.");
+                    return;
+                }
+
                 contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
                 
-                statusMsg.textContent = 'Wallet Connected.';
-                statusMsg.style.color = 'var(--primary)';
+                statusMsg.textContent = 'Wallet Connected (Sepolia).';
+                statusMsg.style.color = 'var(--primary)'; // Or 'green' if you don't have CSS var
                 
                 await fetchStoredValue();
 
             } catch (error) {
-                console.error(error);
-                statusMsg.textContent = 'Connection denied or error.';
-                statusMsg.style.color = '#ff3366';
+                console.error("Initialization Error:", error);
+                statusMsg.textContent = 'Connection denied or wrong network.';
+                statusMsg.style.color = 'red';
             }
         } else {
             statusMsg.textContent = 'Please install MetaMask!';
-            statusMsg.style.color = '#ff3366';
+            statusMsg.style.color = 'red';
         }
     }
 
@@ -71,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (txInfo) txInfo.classList.remove('hidden'); 
             if (txLink) {
-                txLink.textContent = `${tx.hash.substring(0, 10)}...`;
+                txLink.textContent = `${tx.hash}`;
                 txLink.href = `https://sepolia.etherscan.io/tx/${tx.hash}`;
             }
 
